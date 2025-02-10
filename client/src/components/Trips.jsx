@@ -35,8 +35,13 @@ const Trips = () => {
     };
 
     useEffect(() => {
-        fetchTrips();
-    }, []);
+        const delayDebounceFn = setTimeout(() => {
+            fetchTrips();
+        }, 500);
+    
+        return () => clearTimeout(delayDebounceFn);
+    }, [keywords]);
+    
 
     const handleCopyLink = (link, tripId) => {
         navigator.clipboard.writeText(link).then(() => {
@@ -58,106 +63,119 @@ const Trips = () => {
     };
 
     return (
-        <div className="max-w-5xl m-auto">
-            <h1 className="text-2xl font-bold mb-4 text-cyan-500 text-center">วางแพลน เที่ยวไหนดี</h1>
-            <div className="flex items-end gap-2">
-                <div className="w-full">
-                    <label htmlFor="search" className="block text-sm/6 font-medium text-gray-900">
-                        ค้นหาสถานที่ท่องเที่ยว
-                    </label>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 text-cyan-500 text-center">เที่ยวไหนดี</h1>
+            
+            {/* ค้นหาที่เที่ยว */}
+            <div className="max-w-5xl mx-auto">
+                <label htmlFor="search" className="block text-base font-medium text-gray-900 text-start">
+                    ค้นหาที่เที่ยว
+                </label>
+                <div className="flex gap-2 mt-2">
                     <input
                         id="search"
                         name="search"
                         type="text"
                         value={keywords}
                         onChange={(e) => setKeywords(e.target.value)}
-                        placeholder="ป้อนคำค้นหา เช่น เกาะช้าง แล้วไปกัน..."
-                        className="border border-gray-300 p-2 rounded-lg w-full focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+                        placeholder="หาที่เที่ยวแล้วไปกัน..."
+                        className="p-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:border-cyan-500 text-center shadow-md"
                     />
                 </div>
-                <button
-                    onClick={fetchTrips}
-                    className="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2.5 rounded-lg"
-                >
-                    ค้นหา
-                </button>
             </div>
-            {loading && <p>กำลังโหลด...</p>}
-            {error && <p className="text-red-500">เกิดข้อผิดพลาด: {error}</p>}
-            <div className="list-disc divide-y divide-gray-200">
+
+            {loading && <p className="text-center text-gray-500 mt-4">กำลังโหลด...</p>}
+            {error && <p className="text-center text-red-500 mt-4">เกิดข้อผิดพลาด: {error}</p>}
+
+            {/* รายการทริป */}
+            <div className="mt-10 space-y-10">
                 {trips.map((trip) => (
-                    <div key={trip.eid} className="py-8 grid grid-cols-4 gap-6">
-                        <div className="col-span-full lg:col-span-1">
-                            {/* แสดงรูปที่ index 0 */}
-                            <img
-                                src={trip.photos[0]}
-                                alt={`Trip image 0`}
-                                className="h-[272px] w-full object-cover rounded-xl"
-                            />
-                        </div>
-                        <div className="col-span-full lg:col-span-3">
-                            <h2 className="font-semibold text-lg mb-2">{trip.title}</h2>
+                    <div key={trip.eid} className="flex flex-col md:flex-row gap-6">
+                        
+                        {/* รูปภาพหลัก */}
+                        <img
+                            src={trip.photos[0]}
+                            alt={`Trip image 0`}
+                            className="w-full md:w-[24rem] aspect-[16/9] md:h-[280px] object-cover rounded-3xl"
+                        />
+
+
+                        {/* ข้อมูลทริป */}
+                        <div className="flex-1">
+                            <h2 className="font-semibold text-2xl sm:text-3xl mb-2">{trip.title}</h2>
+                            
                             <div className="mb-2">
-                                <p className={`text-gray-600 ${!(descriptionVisibility[trip.eid]) ? 'truncate' : ''}`}>
+                                <p className={`text-gray-600 ${!descriptionVisibility[trip.eid] ? 'line-clamp-1' : ''}`}>
                                     {trip.description}
                                 </p>
 
-                                {trip.description.length > 100 && !descriptionVisibility[trip.eid] && (
+                                {trip.description.length > 100 && (
                                     <button
                                         onClick={() => toggleDescription(trip.eid)}
-                                        className="text-cyan-500 underline hover:underline-offset-4"
+                                        className="text-cyan-500 underline hover:underline-offset-4 mt-2"
                                     >
-                                        อ่านต่อ
-                                    </button>
-                                )}
-
-                                {descriptionVisibility[trip.eid] && (
-                                    <button
-                                        onClick={() => toggleDescription(trip.eid)}
-                                        className="text-cyan-500 underline hover:underline-offset-4"
-                                    >
-                                        ย่อ
+                                        {descriptionVisibility[trip.eid] ? 'ย่อ' : 'อ่านต่อ'}
                                     </button>
                                 )}
                             </div>
-                            <div className="mb-2 flex flex-col sm:flex-row gap-2">
-                                <p className="min-w-fit">หยวดหมู่:</p>
-                                <ul className="list-inline">
-                                    {trip.tags.map((tag, index) => (
+
+                            {/* หมวดหมู่ */}
+                            <div className="mb-2 flex flex-wrap gap-2">
+                                <p className="min-w-fit">หมวดหมู่:</p>
+                                <ul className="list-inline flex gap-2">
+                                    {trip.tags.slice(0, -1).map((tag, index) => (
                                         <li
                                             key={index}
-                                            className="inline-block bg-gray-200 text-gray-700 text-sm px-2 py-1 rounded-full mr-2 mb-2 cursor-pointer hover:bg-gray-300"
+                                            className="text-gray-600 underline hover:underline-offset-4 cursor-pointer min-w-fit"
                                             onClick={() => {
                                                 setKeywords(tag);
                                                 fetchTrips();
                                             }}
                                         >
                                             {tag}
-                                    </li>
+                                        </li>
+                                    ))}
+                                </ul>
+                                และ
+                                <ul className="list-inline flex gap-2">
+                                    {trip.tags.slice(-1).map((tag, index) => (
+                                        <li
+                                            key={index}
+                                            className="text-gray-600 underline hover:underline-offset-4 cursor-pointer min-w-fit"
+                                            onClick={() => {
+                                                setKeywords(tag);
+                                                fetchTrips();
+                                            }}
+                                        >
+                                            {tag}
+                                        </li>
                                     ))}
                                 </ul>
                             </div>
-                            <div className="md:flex justify-between items-end gap-4">
-                                {/* แสดงรูปที่เหลือ */}
-                                <div className="flex gap-2 mb-2 overflow-x-auto">
+
+                            <div className="flex justify-between items-end">
+                                {/* รูปภาพเพิ่มเติม */}
+                                <div className="flex gap-2 overflow-x-auto mt-3">
                                     {trip.photos.slice(1).map((photoUrl, index) => (
                                         <img
                                             key={index}
                                             src={photoUrl}
                                             alt={`Trip image ${index + 1}`}
-                                            className="w-32 h-32 object-cover rounded-lg"
+                                            className="w-24 h-24 object-cover rounded-xl"
                                         />
                                     ))}
                                 </div>
-                                <div className="mt-6 md:mt-2">
+
+                                {/* ปุ่ม Copy Link */}
+                                <div className="mt-4">
                                     <button
                                         onClick={() => handleCopyLink(trip.url, trip.eid)}
-                                        className="text-cyan-500 w-[80px] h-[40px] rounded-lg border border-cyan-500 hover:bg-gray-100 flex justify-center items-center"
+                                        className="text-cyan-500 w-12 h-12 rounded-full border-2 border-cyan-500 hover:bg-gray-100 flex justify-center items-center"
                                     >
                                         {copiedTripId === trip.eid ? (
                                             <span className="text-xs">Copied!</span>
                                         ) : (
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6 w-5 h-5">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                                             </svg>
                                         )}
@@ -168,13 +186,11 @@ const Trips = () => {
                     </div>
                 ))}
             </div>
+
             {!loading && !trips.length && !error && (
-                <div className="flex flex-col justify-center w-full items-center">
-                    <img
-                        src={NotingSearch}
-                        className="w-72 h-72 bg-cover bg-center rounded-xl"
-                    />
-                    <p>ไม่มีทริปที่ตรงกับคำค้นหา ลองป้อนคำใหม่</p>
+                <div className="flex flex-col justify-center items-center mt-10">
+                    <img src={NotingSearch} className="w-56 h-56 object-cover rounded-xl" />
+                    <p className="text-center mt-4">ไม่มีทริปที่ตรงกับคำค้นหา ลองป้อนคำใหม่</p>
                 </div>
             )}
         </div>
